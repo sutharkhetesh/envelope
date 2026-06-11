@@ -113,7 +113,7 @@ function printEnvelope(address: Address) {
   ).join('');
 
   const addrRows = lines.map(
-    (l, i) => `<div style="position:absolute;left:${ADDR_X}in;top:${(ADDR_TOP + i * LINE_H).toFixed(3)}in;width:${LINES_W}in;white-space:nowrap;overflow:hidden;font-family:Arial,Helvetica,sans-serif;font-size:10pt;color:#000;">${l}</div>`
+    (l, i) => `<div style="position:absolute;left:${ADDR_X}in;top:${(ADDR_TOP + i * LINE_H).toFixed(3)}in;width:${LINES_W}in;white-space:nowrap;overflow:visible;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:500;color:#000;">${l}</div>`
   ).join('');
 
   const html = `<!DOCTYPE html>
@@ -128,11 +128,11 @@ function printEnvelope(address: Address) {
     .envelope { width:10in; height:4.5in; position:relative; background:white; }
     .phone {
       position:absolute;
-      left:5.28in; top:2.42in;
+      left:5.28in; top:2.40in;
       width:2.75in;
       text-align:center;
-      font-family:Arial,Helvetica,sans-serif; font-size:9.5pt;
-      font-weight:600; color:#000; white-space:nowrap;
+      font-family:Arial,Helvetica,sans-serif; font-size:12pt;
+      font-weight:700; color:#000; white-space:nowrap;
     }
     @media screen {
       body {
@@ -163,6 +163,10 @@ function printEnvelope(address: Address) {
       }
       .btn-close:hover { background:#f3f4f6; }
       .hint { color:#6b7280; font-size:12px; text-align:center; }
+      .hint-warn {
+        background:#fef3c7; border:1px solid #f59e0b; color:#92400e;
+        padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500;
+      }
     }
     @media print {
       .ghost, .ghost-to, .ghost-divider, .toolbar, .hint { display:none !important; }
@@ -182,10 +186,14 @@ function printEnvelope(address: Address) {
     <div class="phone">${phone}</div>
     ${addrRows}
   </div>
-  <p class="hint">
-    &#128204; Gray lines &amp; &ldquo;To.&rdquo; are already on your envelope &mdash; shown here for alignment only<br>
-    Load your 10&Prime; &times; 4.5&Prime; envelope and click <strong>Print Envelope</strong>
-  </p>
+  <div class="hint">
+    <div class="hint-warn">
+      &#9888; Before printing: In the print dialog &rarr; <strong>More settings</strong> &rarr; turn OFF <strong>&ldquo;Headers and footers&rdquo;</strong> &amp; set Margins to <strong>None</strong>
+    </div>
+    <div style="margin-top:6px;">
+      &#128204; Gray lines &amp; &ldquo;To.&rdquo; are on the envelope already &mdash; shown here for alignment only
+    </div>
+  </div>
 </body>
 </html>`;
 
