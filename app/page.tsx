@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface Address {
   id: number;
-  first_name: string;
-  last_name: string;
+  name: string;
   company_name?: string | null;
   phone_country_code: string;
   phone_number: string;
@@ -21,8 +20,7 @@ interface Address {
 type FormData = Omit<Address, 'id' | 'created_at'>;
 
 const EMPTY_FORM: FormData = {
-  first_name: '',
-  last_name: '',
+  name: '',
   company_name: '',
   phone_country_code: '+91',
   phone_number: '',
@@ -79,7 +77,7 @@ function printEnvelope(address: Address) {
   //   Fill lines are at y = 2.98", 3.28", 3.58", 3.87"  spanning x = 5.28"–8.03"
   //   Phone goes ABOVE "To." at ~(4.75", 2.42")
 
-  const fullName = `${esc(address.first_name)} ${esc(address.last_name)}`;
+  const fullName = esc(address.name);
   const phone    = `${esc(address.phone_country_code)} ${esc(address.phone_number)}`;
 
   // Build exactly 4 address lines to sit on the 4 preprinted fill lines
@@ -256,8 +254,7 @@ export default function Home() {
   const openEdit = (addr: Address) => {
     setEditingId(addr.id);
     setForm({
-      first_name:        addr.first_name,
-      last_name:         addr.last_name,
+      name:              addr.name,
       company_name:      addr.company_name      || '',
       phone_country_code: addr.phone_country_code || '+91',
       phone_number:      addr.phone_number,
@@ -280,8 +277,7 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.first_name.trim())   return setFormError('First name is required.');
-    if (!form.last_name.trim())    return setFormError('Last name is required.');
+    if (!form.name.trim())          return setFormError('Name is required.');
     if (!form.phone_number.trim()) return setFormError('Phone number is required.');
     if (!form.address_line1.trim()) return setFormError('Address line 1 is required.');
     if (!form.city.trim())         return setFormError('City is required.');
@@ -437,8 +433,8 @@ export default function Home() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {addresses.map((addr) => {
-                    const initials = (addr.first_name[0] || '') + (addr.last_name[0] || '');
-                    const fullName = `${addr.first_name} ${addr.last_name}`;
+                    const initials = addr.name.split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+                    const fullName = addr.name;
                     return (
                       <tr key={addr.id} className="hover:bg-blue-50/40 transition-colors group">
                         <td className="px-5 py-4">
@@ -567,15 +563,9 @@ export default function Home() {
                   <span className="w-5 h-5 rounded-full bg-blue-100 inline-flex items-center justify-center text-blue-600 text-[10px] font-bold">1</span>
                   Personal Info
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={label}>First Name <span className="text-red-500 normal-case">*</span></label>
-                    <input type="text" className={input} placeholder="John" value={form.first_name} onChange={set('first_name')}/>
-                  </div>
-                  <div>
-                    <label className={label}>Last Name <span className="text-red-500 normal-case">*</span></label>
-                    <input type="text" className={input} placeholder="Doe" value={form.last_name} onChange={set('last_name')}/>
-                  </div>
+                <div>
+                  <label className={label}>Full Name <span className="text-red-500 normal-case">*</span></label>
+                  <input type="text" className={input} placeholder="John Doe" value={form.name} onChange={set('name')}/>
                 </div>
               </div>
 

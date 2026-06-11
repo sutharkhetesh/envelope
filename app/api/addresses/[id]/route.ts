@@ -7,7 +7,7 @@ export async function PUT(
 ) {
   try {
     const {
-      first_name, last_name, company_name,
+      name, company_name,
       phone_country_code, phone_number,
       address_line1, address_line2,
       city, state, postal_code, country,
@@ -15,15 +15,15 @@ export async function PUT(
 
     const result = await pool.query(
       `UPDATE envelope_addresses SET
-         first_name=$1, last_name=$2, company_name=$3,
-         phone_country_code=$4, phone_number=$5,
-         address_line1=$6, address_line2=$7,
-         city=$8, state=$9, postal_code=$10, country=$11,
+         name=$1, company_name=$2,
+         phone_country_code=$3, phone_number=$4,
+         address_line1=$5, address_line2=$6,
+         city=$7, state=$8, postal_code=$9, country=$10,
          updated_at=CURRENT_TIMESTAMP
-       WHERE id=$12
+       WHERE id=$11
        RETURNING *`,
       [
-        first_name, last_name, company_name || null,
+        name, company_name || null,
         phone_country_code, phone_number,
         address_line1, address_line2 || null,
         city, state || null, postal_code || null, country || null,

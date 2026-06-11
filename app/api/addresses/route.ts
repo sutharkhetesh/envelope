@@ -9,10 +9,9 @@ export async function GET(req: NextRequest) {
     const result = search
       ? await pool.query(
           `SELECT * FROM envelope_addresses
-           WHERE first_name ILIKE $1 OR last_name ILIKE $1
-              OR company_name ILIKE $1 OR address_line1 ILIKE $1
-              OR city ILIKE $1 OR postal_code ILIKE $1
-              OR phone_number ILIKE $1
+           WHERE name ILIKE $1 OR company_name ILIKE $1
+              OR address_line1 ILIKE $1 OR city ILIKE $1
+              OR postal_code ILIKE $1 OR phone_number ILIKE $1
            ORDER BY created_at DESC`,
           [`%${search}%`]
         )
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const {
-      first_name, last_name, company_name,
+      name, company_name,
       phone_country_code, phone_number,
       address_line1, address_line2,
       city, state, postal_code, country,
@@ -36,12 +35,12 @@ export async function POST(req: NextRequest) {
 
     const result = await pool.query(
       `INSERT INTO envelope_addresses
-         (first_name, last_name, company_name, phone_country_code, phone_number,
+         (name, company_name, phone_country_code, phone_number,
           address_line1, address_line2, city, state, postal_code, country)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING *`,
       [
-        first_name, last_name, company_name || null,
+        name, company_name || null,
         phone_country_code, phone_number,
         address_line1, address_line2 || null,
         city, state || null, postal_code || null, country || null,
