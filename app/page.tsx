@@ -73,19 +73,24 @@ function avatarColor(name: string): string {
 function printEnvelope(address: Address) {
   const title = esc(address.company_name || address.city || 'Envelope')
 
-  // Sender lines — skip any empty field, no blank gaps
+  // Sender lines — skip any empty field, no blank gaps; phone is first
   const rows: Array<{ text: string; bold?: boolean }> = []
 
-  if (address.company_name?.trim())
-    rows.push({ text: esc(address.company_name), bold: true })
-
-  const phone = [address.phone_country_code?.trim(), address.phone_number?.trim()]
+  const phone = [
+    address.phone_country_code?.trim(),
+    address.phone_number?.trim()
+  ]
     .filter(Boolean)
     .join(' ')
   if (phone) rows.push({ text: esc(phone) })
 
-  if (address.address_line1?.trim()) rows.push({ text: esc(address.address_line1) })
-  if (address.address_line2?.trim()) rows.push({ text: esc(address.address_line2) })
+  if (address.company_name?.trim())
+    rows.push({ text: esc(address.company_name), bold: true })
+
+  if (address.address_line1?.trim())
+    rows.push({ text: esc(address.address_line1) })
+  if (address.address_line2?.trim())
+    rows.push({ text: esc(address.address_line2) })
 
   // city, state postalCode  (no comma before postal)
   if (address.city?.trim()) {
@@ -98,10 +103,10 @@ function printEnvelope(address: Address) {
   if (address.country?.trim()) rows.push({ text: esc(address.country) })
 
   const linesHtml = rows
-    .map(
-      r =>
-        `<div class="${r.bold ? 'ln-co' : 'ln'}">${r.text}</div>`
-    )
+    .map((r, i) => {
+      const cls = r.bold ? 'ln-co' : i === 0 ? 'ln-phone' : 'ln'
+      return `<div class="${cls}">${r.text}</div>`
+    })
     .join('')
 
   const html = `<!DOCTYPE html>
@@ -117,26 +122,30 @@ function printEnvelope(address: Address) {
     /* Envelope canvas */
     .envelope {
       width:10in; height:4.5in; position:relative; background:white;
-      display:flex; align-items:stretch;
+      display:flex; align-items:stretch; justify-content:flex-end;
     }
 
-    /* Sender block — left 30%, content centered */
+    /* Sender block — right side, text left-aligned */
     .sender {
-      width:3in;
+      width:3.2in;
       display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
+      align-items:flex-start; justify-content:center;
       padding:0.25in 0.3in;
-      text-align:center;
+      text-align:left;
       font-family:Arial,Helvetica,sans-serif;
     }
 
     .ln-co {
-      font-size:20pt; font-weight:700; color:#000;
-      line-height:1.25; margin-bottom:0.09in;
+      font-size:16pt; font-weight:700; color:#000;
+      line-height:1.5;
     }
     .ln {
-      font-size:15pt; font-weight:400; color:#000;
-      line-height:1.5;
+      font-size:16pt; font-weight:400; color:#000;
+      line-height:1.5; width:100%;
+    }
+    .ln-phone {
+      font-size:16pt; font-weight:400; color:#000;
+      line-height:1.5; width:100%; text-align:center;
     }
 
     @media screen {
@@ -147,7 +156,7 @@ function printEnvelope(address: Address) {
       }
       .envelope { background:#fffef8; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
       .divider {
-        position:absolute; left:3.2in; top:0.15in; bottom:0.15in;
+        position:absolute; left:6.7in; top:0.15in; bottom:0.15in;
         border-left:1.5px dashed #b8c4d4; pointer-events:none;
       }
       .toolbar { display:flex; align-items:center; gap:10px; }
@@ -536,7 +545,8 @@ export default function Home() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {addresses.map(addr => {
-                    const fullName = addr.name || addr.company_name || addr.city || 'Unknown'
+                    const fullName =
+                      addr.name || addr.company_name || addr.city || 'Unknown'
                     const initials = fullName
                       .split(' ')
                       .map(w => w[0] || '')
