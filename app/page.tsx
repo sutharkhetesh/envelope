@@ -71,59 +71,36 @@ function avatarColor(name: string): string {
 }
 
 function printEnvelope(address: Address) {
-  // Envelope: 10" × 4.5" landscape
-  // Coordinates derived by mapping the actual photo (rotated 90° CW) back to landscape:
-  //   "To." is preprinted at ~(4.75", 2.79")  — we do NOT reprint it
-  //   Fill lines are at y = 2.98", 3.28", 3.58", 3.87"  spanning x = 5.28"–8.03"
-  //   Phone goes ABOVE "To." at ~(4.75", 2.42")
+  const title = esc(address.company_name || address.city || 'Envelope')
 
-  const fullName = esc(address.name)
-  const phone = `${esc(address.phone_country_code)} ${esc(address.phone_number)}`
+  // Sender lines — skip any empty field, no blank gaps
+  const rows: Array<{ text: string; bold?: boolean }> = []
 
-  // Build exactly 4 address lines to sit on the 4 preprinted fill lines
-  const lines: string[] = []
-  lines.push(fullName)
-  if (address.company_name?.trim()) lines.push(esc(address.company_name))
+  if (address.company_name?.trim())
+    rows.push({ text: esc(address.company_name), bold: true })
 
-  const addr1 = address.address_line2?.trim()
-    ? `${esc(address.address_line1)}, ${esc(address.address_line2)}`
-    : esc(address.address_line1)
-  lines.push(addr1)
-
-  const cityLine = [
-    address.city,
-    address.state,
-    address.postal_code,
-    address.country
-  ]
+  const phone = [address.phone_country_code?.trim(), address.phone_number?.trim()]
     .filter(Boolean)
-    .map(esc)
-    .join(', ')
-  lines.push(cityLine)
+    .join(' ')
+  if (phone) rows.push({ text: esc(phone) })
 
-  while (lines.length > 4) {
-    const last = lines.pop()!
-    lines[lines.length - 1] += ', ' + last
+  if (address.address_line1?.trim()) rows.push({ text: esc(address.address_line1) })
+  if (address.address_line2?.trim()) rows.push({ text: esc(address.address_line2) })
+
+  // city, state postalCode  (no comma before postal)
+  if (address.city?.trim()) {
+    let cl = esc(address.city)
+    if (address.state?.trim()) cl += ', ' + esc(address.state)
+    if (address.postal_code?.trim()) cl += ' ' + esc(address.postal_code)
+    rows.push({ text: cl })
   }
-  while (lines.length < 4) lines.push('')
 
-  // Preprinted fill-line Y positions (screen ghost guide + text placement)
-  const LINES_Y = [2.98, 3.28, 3.58, 3.87]
-  const LINES_X = 5.28
-  const LINES_W = 2.75
-  const ADDR_X = 5.32
-  const ADDR_TOP = 2.84 // baseline lands ~on the first fill line
-  const LINE_H = 0.305 // spacing between fill lines
+  if (address.country?.trim()) rows.push({ text: esc(address.country) })
 
-  const ghostLines = LINES_Y.map(
-    y =>
-      `<div style="position:absolute;left:${LINES_X}in;top:${y}in;width:${LINES_W}in;border-bottom:1px solid #b0bcc8;"></div>`
-  ).join('')
-
-  const addrRows = lines
+  const linesHtml = rows
     .map(
-      (l, i) =>
-        `<div style="position:absolute;left:${ADDR_X}in;top:${(ADDR_TOP + i * LINE_H).toFixed(3)}in;width:${LINES_W}in;white-space:nowrap;overflow:visible;font-family:Arial,Helvetica,sans-serif;font-size:13pt;font-weight:500;color:#000;">${l}</div>`
+      r =>
+        `<div class="${r.bold ? 'ln-co' : 'ln'}">${r.text}</div>`
     )
     .join('')
 
@@ -131,20 +108,37 @@ function printEnvelope(address: Address) {
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Envelope — ${fullName}</title>
+  <title>Envelope — ${title}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     @page { size: 10in 4.5in; margin: 0; }
     html, body { width:10in; height:4.5in; overflow:hidden; }
-    .envelope { width:10in; height:4.5in; position:relative; background:white; }
-    .phone {
-      position:absolute;
-      left:5.28in; top:2.40in;
-      width:2.75in;
-      text-align:center;
-      font-family:Arial,Helvetica,sans-serif; font-size:12pt;
-      font-weight:700; color:#000; white-space:nowrap;
+
+    /* Envelope canvas */
+    .envelope {
+      width:10in; height:4.5in; position:relative; background:white;
+      display:flex; align-items:stretch;
     }
+
+    /* Sender block — left 30%, content centered */
+    .sender {
+      width:3in;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:0.25in 0.3in;
+      text-align:center;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+
+    .ln-co {
+      font-size:20pt; font-weight:700; color:#000;
+      line-height:1.25; margin-bottom:0.09in;
+    }
+    .ln {
+      font-size:15pt; font-weight:400; color:#000;
+      line-height:1.5;
+    }
+
     @media screen {
       body {
         background:#d1d9e6; display:flex; flex-direction:column;
@@ -152,20 +146,15 @@ function printEnvelope(address: Address) {
         min-height:100vh; gap:16px; font-family:Arial,sans-serif;
       }
       .envelope { background:#fffef8; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
-      .ghost-to {
-        position:absolute; left:4.75in; top:2.76in;
-        font-family:Arial; font-size:10pt; color:#aab0bc; font-style:italic;
-      }
-      .ghost-divider {
-        position:absolute; left:4.5in; top:0.2in; bottom:0.2in;
-        border-left:1px dashed #c5cdd9;
+      .divider {
+        position:absolute; left:3.2in; top:0.15in; bottom:0.15in;
+        border-left:1.5px dashed #b8c4d4; pointer-events:none;
       }
       .toolbar { display:flex; align-items:center; gap:10px; }
       .btn-print {
         background:#16a34a; color:#fff; border:none;
         padding:11px 32px; border-radius:8px; font-size:14px;
-        font-weight:700; cursor:pointer;
-        box-shadow:0 2px 8px rgba(22,163,74,0.35);
+        font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(22,163,74,0.35);
       }
       .btn-print:hover { background:#15803d; }
       .btn-close {
@@ -173,15 +162,18 @@ function printEnvelope(address: Address) {
         padding:11px 22px; border-radius:8px; font-size:14px; cursor:pointer;
       }
       .btn-close:hover { background:#f3f4f6; }
-      .hint { color:#6b7280; font-size:12px; text-align:center; }
+      .hint { color:#6b7280; font-size:12px; text-align:center; max-width:820px; }
       .hint-warn {
         background:#fef3c7; border:1px solid #f59e0b; color:#92400e;
-        padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500;
+        padding:8px 18px; border-radius:8px; font-size:13px; font-weight:500;
       }
     }
+
     @media print {
-      .ghost, .ghost-to, .ghost-divider, .toolbar, .hint { display:none !important; }
+      .toolbar, .hint, .divider { display:none !important; }
       body { background:white; display:block; margin:0; }
+      .envelope { display:flex; }
+      .sender { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     }
   </style>
 </head>
@@ -191,18 +183,12 @@ function printEnvelope(address: Address) {
     <button class="btn-close" onclick="window.close()">Close</button>
   </div>
   <div class="envelope">
-    <div class="ghost-divider"></div>
-    <div class="ghost-to">To.</div>
-    <div class="ghost">${ghostLines}</div>
-    <div class="phone">${phone}</div>
-    ${addrRows}
+    <div class="divider"></div>
+    <div class="sender">${linesHtml}</div>
   </div>
   <div class="hint">
     <div class="hint-warn">
-      &#9888; Before printing: In the print dialog &rarr; <strong>More settings</strong> &rarr; turn OFF <strong>&ldquo;Headers and footers&rdquo;</strong> &amp; set Margins to <strong>None</strong>
-    </div>
-    <div style="margin-top:6px;">
-      &#128204; Gray lines &amp; &ldquo;To.&rdquo; are on the envelope already &mdash; shown here for alignment only
+      &#9888;&nbsp; Before printing &rarr; <strong>More settings</strong>: Margins&nbsp;<strong>None</strong>, disable <strong>Headers &amp; footers</strong>, Scale&nbsp;<strong>100%</strong>, Paper&nbsp;<strong>Custom&nbsp;10&nbsp;&times;&nbsp;4.5&nbsp;in</strong>
     </div>
   </div>
 </body>
@@ -210,13 +196,12 @@ function printEnvelope(address: Address) {
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
   const blobUrl = URL.createObjectURL(blob)
-  const win = window.open(blobUrl, '_blank', 'width=1080,height=540')
+  const win = window.open(blobUrl, '_blank', 'width=1120,height=520')
   if (!win) {
     URL.revokeObjectURL(blobUrl)
     alert('Please allow popups to enable printing.')
     return
   }
-  // Clean up the object URL once the window has loaded
   win.onload = () => URL.revokeObjectURL(blobUrl)
 }
 
