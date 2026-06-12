@@ -551,13 +551,13 @@ export default function Home() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {addresses.map(addr => {
-                    const initials = (addr.name || '')
+                    const fullName = addr.name || addr.company_name || addr.city || 'Unknown'
+                    const initials = fullName
                       .split(' ')
                       .map(w => w[0] || '')
                       .slice(0, 2)
                       .join('')
                       .toUpperCase()
-                    const fullName = addr.name || ''
                     return (
                       <tr
                         key={addr.id}

@@ -40,6 +40,13 @@ export async function GET() {
       END $$;
     `);
 
+    // Fix rows where name ended up NULL or empty (e.g. saved before the field was wired up)
+    await pool.query(`
+      UPDATE envelope_addresses
+      SET name = COALESCE(NULLIF(TRIM(company_name), ''), city, 'Unknown')
+      WHERE name IS NULL OR TRIM(name) = ''
+    `);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('DB init error:', error);
